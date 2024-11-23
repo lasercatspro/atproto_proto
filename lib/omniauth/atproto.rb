@@ -42,13 +42,10 @@ module OmniAuth
         }
 
         response = @dpop_handler.make_request(
-          client,
-          :post,
           client.token_url,
-          {
-            headers: { "Content-Type" => "application/json", "Accept" => "application/json" },
-            body: token_params.to_json
-          }
+          :post,
+          headers: { "Content-Type" => "application/json", "Accept" => "application/json" },
+          body: token_params
         )
         ::OAuth2::AccessToken.from_hash(client, JSON.parse(response.body))
       end
