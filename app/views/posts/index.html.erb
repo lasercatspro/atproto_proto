@@ -1,5 +1,5 @@
 <h1>Posts#index</h1>
-<% @posts.each do |post| %>
-  <p><%= post.content %></p>
-  --------------------------
-<% end %>
+Les posts dont tu es l'auteur (test ta connection) :
+<p>
+  <%= @posts_from_the_internet.map { |p| p["value"]["text"] } %>
+</p>

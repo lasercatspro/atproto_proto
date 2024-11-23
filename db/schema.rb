@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2024_11_21_081108) do
+ActiveRecord::Schema[8.0].define(version: 2024_11_23_164114) do
   create_table "feed_items", force: :cascade do |t|
     t.integer "user_id", null: false
     t.integer "post_id", null: false
@@ -19,6 +19,17 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_21_081108) do
     t.index ["post_id"], name: "index_feed_items_on_post_id"
     t.index ["user_id", "post_id"], name: "index_feed_items_on_user_id_and_post_id", unique: true
     t.index ["user_id"], name: "index_feed_items_on_user_id"
+  end
+
+  create_table "pds_tokens", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "pds_host"
+    t.text "token"
+    t.text "refresh_token"
+    t.datetime "expires_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_pds_tokens_on_user_id"
   end
 
   create_table "posts", force: :cascade do |t|
@@ -41,6 +52,15 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_21_081108) do
     t.index ["reply_root_uri"], name: "index_posts_on_reply_root_uri"
   end
 
+  create_table "sessions", force: :cascade do |t|
+    t.integer "user_id", null: false
+    t.string "ip_address"
+    t.string "user_agent"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_sessions_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "handle"
     t.string "atproto_uri"
@@ -51,4 +71,6 @@ ActiveRecord::Schema[8.0].define(version: 2024_11_21_081108) do
 
   add_foreign_key "feed_items", "posts"
   add_foreign_key "feed_items", "users"
+  add_foreign_key "pds_tokens", "users"
+  add_foreign_key "sessions", "users"
 end

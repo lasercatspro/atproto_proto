@@ -23,6 +23,9 @@
   </head>
 
   <body>
+    <%= button_to "log out", session_path, method: :delete if Current.user %>
+    <p class="notice"><%= notice %></p>
+    <p class="alert"><%= alert %></p>
     <%= yield %>
   </body>
 </html>

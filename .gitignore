@@ -32,3 +32,9 @@
 
 # Ignore master key for decrypting credentials and more.
 /config/master.key
+
+# Our generated keys and metadata
+
+/config/atproto_jwk.json
+/config/atproto_private_key.pem
+/public/oauth/client-metadata.json

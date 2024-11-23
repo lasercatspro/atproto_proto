@@ -7,5 +7,9 @@ class GetPostsService
     @handle = handle
   end
 
-  def call = AtprotoClient.new(handle: @handle).posts_from_followed
+  def call
+    bob = AtprotoClient::Scrapper.new(pds_url, list_followed.map { |f| f.dig("value", "subject") })
+    bob.posts_from_followed
+    bob.posts.values
+  end
 end

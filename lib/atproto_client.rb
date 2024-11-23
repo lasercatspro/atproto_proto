@@ -1,95 +1,85 @@
-# require "skyfall"
-
-require "net/http"
-require "async"
-
 class AtprotoClient
-  def initialize(handle: nil, did: nil)
-    @handle = handle
-    @did = did
+  class TokenExpiredError < StandardError; end
+
+  def initialize(access_token, refresh_token, dpop_handler = nil)
+    @access_token = access_token
+    @refresh_token = refresh_token
+    @dpop_handler = dpop_handler || DpopHandler.new
+    @token_mutex = Mutex.new
+    setup_client
   end
 
-  def did
-    host = URI("https://#{@handle}").host || @handle
-
-    @did ||= begin
-      response = Net::HTTP.get(URI("https://#{host}/.well-known/atproto-did"))
-      return response.strip if response
-    rescue e
-      puts e
-      "did:plc:#{@handle}"
+  def setup_client
+    @client = Faraday.new do |f|
+      f.request :json
+      f.response :json
+      f.adapter Faraday.default_adapter
     end
   end
 
-  def base_uri = @uri ||= URI("https://plc.directory/#{did}")
+  def make_api_request(method, url, params: {}, body: nil)
+    retries = 0
+    begin
+      uri = URI(url)
+      uri.query = URI.encode_www_form(params) if params.any?
 
-  def lookup_profile = JSON.parse(Net::HTTP.get(base_uri))
+      response = @dpop_handler.make_request(
+        uri.to_s,
+        method,
+        headers: { "Authorization" => "Bearer #{@access_token}" },
+        body: body
+      )
 
-  def pds_url
-    url = lookup_profile.dig("service").find { |s| s["id"] == "#atproto_pds" }
-    url["serviceEndpoint"]
-  end
-
-  def list_records(collection)
-    uri = URI("#{pds_url}/xrpc/com.atproto.repo.listRecords")
-    params = { repo: did, collection: }
-    uri.query = URI.encode_www_form(params)
-    response = Net::HTTP.get(uri)
-    JSON.parse(response)
-  end
-
-  def list_followed
-    data = list_records("app.bsky.graph.follow")
-    data["records"].map do |record|
-      {
-        did: record["value"]["subject"],
-        created_at: record["value"]["createdAt"],
-        rkey: record["rkey"]
-      }
-    end
-  end
-
-  def list_posts
-    data = list_records("app.bsky.feed.post")
-
-    data["records"].map do |record|
-      {
-        atproto_uri: record.dig("uri"),
-        cid: record.dig("cid"),
-        content: record.dig("value", "text") || "",
-        type_name: record.dig("value", "$type"),
-        language: record.dig("value", "langs")&.first,
-        reply_root_cid: record.dig("value", "reply", "root", "cid"),
-        reply_root_uri: record.dig("value", "reply", "root", "uri"),
-        reply_parent_cid: record.dig("value", "reply", "parent", "cid"),
-        reply_parent_uri: record.dig("value", "reply", "parent", "uri"),
-        facets: record.dig("value", "facets"),
-        atproto_created_at: record.dig("value", "createdAt")
-      }
-    end
-  end
-
-  def posts_from_followed
-    start_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-
-    list = Async do |task|
-      followed = list_followed
-
-      # Create an array of promises
-      promises = followed.map do |f|
-        task.async do
-          puts "Fetching posts for #{f[:did]}"
-          AtprotoClient.new(did: f[:did]).list_posts
-        end
+      handle_response(response)
+    rescue TokenExpiredError => e
+      if retries.zero? && @refresh_token
+        retries += 1
+        refresh_access_token!
+        retry
+      else
+        raise e
       end
+    end
+  end
 
-      # Wait for all promises to complete and collect results
-      results = promises.map(&:wait)
-      results.flatten
-    end.wait
+  private
 
-    end_time = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-    puts "Total time: #{end_time - start_time} seconds"
-    list
+  def handle_response(response)
+    # Net::HTTP utilise response.code directement
+    case response.code.to_i
+    when 401
+      body = JSON.parse(response.body)
+      raise TokenExpiredError if body["error"] == "token_expired"
+      raise StandardError, "Unauthorized: #{body["error"]}"
+    when 200..299
+      JSON.parse(response.body)
+    else
+      raise StandardError, "Request failed: #{response.code} - #{response.body}"
+    end
+  end
+
+    def refresh_access_token!
+        @token_mutex.synchronize do
+          refresh_dpop = DpopHandler.new
+
+          response = refresh_dpop.make_request(
+            "#{base_url}/xrpc/com.atproto.server.refreshSession",
+            :post,
+            body: { refresh_token: @refresh_token }
+          )
+
+          if response.is_a?(Net::HTTPSuccess)
+            data = JSON.parse(response.body)
+            @access_token = data["access_token"]
+            @refresh_token = data["refresh_token"]
+            @dpop_handler = refresh_dpop
+          else
+            raise StandardError, "Failed to refresh token: #{response.code} - #{response.body}"
+          end
+        end
+    end
+
+  def base_url
+    "https://bsky.social"  # ou via configuration
   end
 end

@@ -81,6 +81,7 @@ GEM
       io-event (~> 1.6, >= 1.6.5)
     base32 (0.3.4)
     base64 (0.2.0)
+    bcrypt (3.1.20)
     bcrypt_pbkdf (1.1.1)
     bcrypt_pbkdf (1.1.1-arm64-darwin)
     bcrypt_pbkdf (1.1.1-x86_64-darwin)
@@ -113,6 +114,12 @@ GEM
     debug (1.9.2)
       irb (~> 1.10)
       reline (>= 0.3.8)
+    devise (4.9.4)
+      bcrypt (~> 3.0)
+      orm_adapter (~> 0.1)
+      railties (>= 4.1.0)
+      responders
+      warden (~> 1.2.3)
     dotenv (3.1.4)
     drb (2.2.1)
     ed25519 (1.3.0)
@@ -120,6 +127,12 @@ GEM
     et-orbi (1.2.11)
       tzinfo
     eventmachine (1.2.7)
+    faraday (2.12.1)
+      faraday-net_http (>= 2.0, < 3.5)
+      json
+      logger
+    faraday-net_http (3.4.0)
+      net-http (>= 0.5.0)
     faye-websocket (0.11.3)
       eventmachine (>= 0.12.0)
       websocket-driver (>= 0.5.1)
@@ -132,6 +145,7 @@ GEM
       raabro (~> 1.4)
     globalid (1.2.1)
       activesupport (>= 6.1)
+    hashie (5.0.0)
     i18n (1.14.6)
       concurrent-ruby (~> 1.0)
     importmap-rails (2.0.3)
@@ -147,6 +161,8 @@ GEM
       actionview (>= 5.0.0)
       activesupport (>= 5.0.0)
     json (2.8.2)
+    jwt (2.9.3)
+      base64
     kamal (2.3.0)
       activesupport (>= 7.0)
       base64 (~> 0.2)
@@ -173,6 +189,10 @@ GEM
     mini_mime (1.1.5)
     minitest (5.25.1)
     msgpack (1.7.5)
+    multi_xml (0.7.1)
+      bigdecimal (~> 3.1)
+    net-http (0.5.0)
+      uri
     net-imap (0.5.1)
       date
       net-protocol
@@ -200,6 +220,24 @@ GEM
       racc (~> 1.4)
     nokogiri (1.16.7-x86_64-linux)
       racc (~> 1.4)
+    oauth2 (2.0.9)
+      faraday (>= 0.17.3, < 3.0)
+      jwt (>= 1.0, < 3.0)
+      multi_xml (~> 0.5)
+      rack (>= 1.2, < 4)
+      snaky_hash (~> 2.0)
+      version_gem (~> 1.1)
+    omniauth (2.1.2)
+      hashie (>= 3.4.6)
+      rack (>= 2.2.3)
+      rack-protection
+    omniauth-oauth2 (1.8.0)
+      oauth2 (>= 1.4, < 3)
+      omniauth (~> 2.0)
+    omniauth-rails_csrf_protection (1.0.2)
+      actionpack (>= 4.2)
+      omniauth (~> 2.0)
+    orm_adapter (0.5.0)
     ostruct (0.6.1)
     parallel (1.26.3)
     parser (3.3.6.0)
@@ -218,6 +256,10 @@ GEM
     raabro (1.4.0)
     racc (1.8.1)
     rack (3.1.8)
+    rack-protection (4.1.1)
+      base64 (>= 0.1.0)
+      logger (>= 1.6.0)
+      rack (>= 3.0.0, < 4)
     rack-session (2.0.0)
       rack (>= 3.0.0)
     rack-test (2.1.0)
@@ -260,6 +302,9 @@ GEM
     regexp_parser (2.9.2)
     reline (0.5.11)
       io-console (~> 0.5)
+    responders (3.1.1)
+      actionpack (>= 5.2)
+      railties (>= 5.2)
     rexml (3.3.9)
     rubocop (1.68.0)
       json (~> 2.3)
@@ -304,6 +349,9 @@ GEM
       cbor (~> 0.5, >= 0.5.9.6)
       eventmachine (~> 1.2, >= 1.2.7)
       faye-websocket (~> 0.11)
+    snaky_hash (2.0.1)
+      hashie
+      version_gem (~> 1.1, >= 1.1.1)
     solid_cable (3.0.2)
       actioncable (>= 7.2)
       activejob (>= 7.2)
@@ -354,6 +402,9 @@ GEM
     unicode-display_width (2.6.0)
     uri (1.0.2)
     useragent (0.16.10)
+    version_gem (1.1.4)
+    warden (1.2.9)
+      rack (>= 2.0.9)
     web-console (4.2.1)
       actionview (>= 6.0.0)
       activemodel (>= 6.0.0)
@@ -385,13 +436,18 @@ PLATFORMS
 
 DEPENDENCIES
   async
+  bcrypt (~> 3.1.7)
   bootsnap
   brakeman
   capybara
   debug
+  devise (~> 4.9)
   importmap-rails
   jbuilder
   kamal
+  omniauth (~> 2.1)
+  omniauth-oauth2
+  omniauth-rails_csrf_protection
   propshaft
   puma (>= 5.0)
   rails (~> 8.0.0)

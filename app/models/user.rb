@@ -1,17 +1,17 @@
 class User < ApplicationRecord
-  # validates :atproto_uri, uniqueness: true
-  validates :handle, presence: true, uniqueness: true
+  has_many :sessions, dependent: :destroy
+  validates :did, presence: true, uniqueness: true
   has_many :feed_items
   has_many :posts, through: :feed_items
+  has_many :pds_tokens, dependent: :destroy
 
-  def add_to_feed(post) = feed_items.create!(post: post)
-
-  def download_posts
-    posts = GetPostsService.call(handle)
-    posts.each do |p|
-      Post.create!(p)
-    rescue ActiveRecord::RecordInvalid => e
-      puts e
-    end
+  def self.from_atproto(auth)
+    user = find_or_create_by!(did: auth.info.did)
+    token = user.pds_tokens.find_or_initialize_by(pds_host: auth.info.pds_host)
+    token.token = auth.credentials.token
+    token.expires_at = auth.credentials.expires_at
+    token.refresh_token = auth.credentials.refresh_token
+    token.save!
+    user
   end
 end
