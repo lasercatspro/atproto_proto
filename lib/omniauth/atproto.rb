@@ -1,14 +1,14 @@
 require "omniauth-oauth2"
 require "json"
 require "net/http"
-require "dpop_handler"
+require "atproto_client"
 
 module OmniAuth
   module Strategies
     class Atproto < OmniAuth::Strategies::OAuth2
       def initialize(app, *args)
         super
-        @dpop_handler = DpopHandler.new(options.dpop_private_key)
+        @dpop_handler = AtProto::DpopHandler.new(options.dpop_private_key)
       end
 
       info do
@@ -47,7 +47,7 @@ module OmniAuth
           headers: { "Content-Type" => "application/json", "Accept" => "application/json" },
           body: token_params
         )
-        ::OAuth2::AccessToken.from_hash(client, JSON.parse(response.body))
+        ::OAuth2::AccessToken.from_hash(client, response)
       end
 
       def generate_client_assertion
